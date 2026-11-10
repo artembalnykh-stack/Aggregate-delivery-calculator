@@ -10,6 +10,10 @@
 
 ---
 
+## Фото
+
+<img width="1133" height="751" alt="Калькулятор доставки" src="https://github.com/user-attachments/assets/957621b5-1db5-4da7-babb-c32846c5583b" />
+
 ## Как это работает (архитектура)
 
 ```
