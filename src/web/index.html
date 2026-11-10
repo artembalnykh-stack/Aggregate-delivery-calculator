@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Калькулятор доставки — Нейростройтранс</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="icon" href="favicon.ico">
+<link rel="apple-touch-icon" href="favicon.png">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="app">
+  <!-- ===================== NAV ===================== -->
+  <nav class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">Н</div>
+      <div>
+        <div class="brand-name">Нейростройтранс</div>
+        <div class="brand-sub">калькулятор доставки</div>
+      </div>
+    </div>
+    <button class="nav-btn active" data-view="calc">
+      <span class="nav-ico">🧮</span> Калькулятор
+    </button>
+    <button class="nav-btn" data-view="products">
+      <span class="nav-ico">📦</span> Товары
+    </button>
+    <button class="nav-btn" data-view="fleet">
+      <span class="nav-ico">🚚</span> Автопарк
+    </button>
+    <button class="nav-btn" data-view="orders">
+      <span class="nav-ico">🧾</span> Наряд-заказы
+    </button>
+    <button class="nav-btn" data-view="history">
+      <span class="nav-ico">🗂</span> История <span id="nav-history-count" class="pill"></span>
+    </button>
+    <button class="nav-btn" data-view="settings">
+      <span class="nav-ico">⚙️</span> Настройки
+    </button>
+    <div class="sidebar-foot">
+      <div id="data-status" class="data-status">Данные не загружены</div>
+    </div>
+  </nav>
+
+  <!-- ===================== MAIN ===================== -->
+  <main class="main">
+
+    <!-- ============ КАЛЬКУЛЯТОР ============ -->
+    <section class="view active" id="view-calc">
+      <div class="calc-grid">
+        <div class="col-left">
+          <div class="card">
+            <div class="card-title">
+              <h2>Данные заказа</h2>
+              <span id="calc-meta" class="muted small"></span>
+            </div>
+            <div class="grid-2">
+              <label class="field">
+                <span>Склад отгрузки</span>
+                <select id="inp-warehouse"></select>
+              </label>
+              <label class="field">
+                <span>Пункт доставки</span>
+                <select id="inp-destination"></select>
+              </label>
+              <label class="field">
+                <span>Способ получения</span>
+                <div class="seg" id="seg-mode">
+                  <button class="seg-btn active" data-mode="delivery">🚛 Доставка</button>
+                  <button class="seg-btn" data-mode="pickup">🎁 Самовывоз</button>
+                </div>
+              </label>
+              <label class="field">
+                <span>Комментарий менеджера</span>
+                <input id="inp-comment" type="text" placeholder="необязательно">
+              </label>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">
+              <h2>Состав заказа</h2>
+              <button class="btn btn-ghost" id="btn-clear-order">Очистить</button>
+            </div>
+            <div class="product-search">
+              <input id="inp-search" type="text" placeholder="Поиск по артикулу или названию…" autocomplete="off">
+              <div id="search-results" class="search-results hidden"></div>
+            </div>
+            <div class="table-wrap">
+              <table class="table" id="order-table">
+                <thead>
+                  <tr><th>Артикул</th><th>Товар</th><th>Ед.</th>
+                      <th class="ta-r">Кол-во</th><th class="ta-r">Масса, т</th>
+                      <th class="ta-r">Объём, м³</th><th class="ta-r">Сумма, ₽</th><th></th></tr>
+                </thead>
+                <tbody id="order-body"></tbody>
+              </table>
+              <div id="order-empty" class="empty-state">Добавьте товары через поиск выше</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-right">
+          <div class="card result-card">
+            <div class="card-title"><h2>Результат расчёта</h2>
+              <button class="btn btn-primary" id="btn-calc">Рассчитать</button>
+            </div>
+            <div id="stale-badge" class="stale-badge hidden">
+              ⚠️ Данные прайса изменились — пересчитайте заказ
+            </div>
+
+            <div class="total-box">
+              <div class="total-label">Итого с доставкой</div>
+              <div class="total-value" id="r-total">—</div>
+              <div class="total-sub" id="r-total-sub">&nbsp;</div>
+            </div>
+
+            <div class="result-rows">
+              <div class="r-row"><span>Стоимость товаров</span><b id="r-goods">—</b></div>
+              <div class="r-row"><span>Масса заказа</span><b id="r-mass">—</b></div>
+              <div class="r-row"><span>Объём заказа</span><b id="r-volume">—</b></div>
+              <div class="r-row"><span>Расстояние (по прямой)</span><b id="r-dist">—</b></div>
+              <div class="r-row"><span>Расчётное расстояние</span><b id="r-dist-calc">—</b></div>
+              <div class="r-row"><span>Стоимость рейса</span><b id="r-trip">—</b></div>
+              <div class="r-row delivery"><span>Стоимость доставки</span><b id="r-delivery">—</b></div>
+            </div>
+
+            <div id="transport-block" class="transport-block hidden">
+              <h3>Назначенные машины</h3>
+              <div id="r-vehicles"></div>
+            </div>
+
+            <div id="r-warnings"></div>
+            <div id="r-notes"></div>
+
+            <div class="result-actions">
+              <button class="btn btn-success" id="btn-docx" disabled>
+                📄 Заказ-наряд Word
+              </button>
+              <button class="btn btn-ghost" id="btn-reset">Сбросить поля</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ТОВАРЫ ============ -->
+    <section class="view" id="view-products">
+      <div class="card">
+        <div class="card-title">
+          <h2>Каталог товаров <span id="products-count" class="pill"></span></h2>
+          <div>
+            <button class="btn btn-primary" id="btn-add-product">＋ Добавить товар</button>
+          </div>
+        </div>
+        <input id="products-search" class="search-wide" type="text"
+               placeholder="Поиск по названию, артикулу или категории…">
+        <div class="table-wrap tall">
+          <table class="table hoverable" id="products-table">
+            <thead><tr><th>Артикул</th><th>Наименование</th><th>Категория</th>
+              <th>Ед.</th><th class="ta-r">Цена, ₽</th><th class="ta-r">Масса ед., кг</th>
+              <th class="ta-r">Объём ед., м³</th><th>Тип груза</th><th>Актив</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ АВТОПАРК ============ -->
+    <section class="view" id="view-fleet">
+      <div class="card">
+        <div class="card-title"><h2>Автопарк <span id="fleet-count" class="pill"></span></h2></div>
+        <div class="table-wrap tall">
+          <table class="table hoverable" id="fleet-table">
+            <thead><tr><th>ID</th><th>Модель</th><th>Госномер</th><th>Кузов</th>
+              <th class="ta-r">Грузоподъёмность, т</th><th class="ta-r">Объём кузова, м³</th>
+              <th>На линии</th><th>Исправна</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ НАРЯД-ЗАКАЗЫ ============ -->
+    <section class="view" id="view-orders">
+      <div class="card">
+        <div class="card-title">
+          <h2>Наряд-заказы <span id="orders-count" class="pill"></span></h2>
+          <div>
+            <button class="btn" id="btn-refresh-exports">🔄 Обновить список</button>
+            <a class="btn btn-ghost" id="btn-open-exports-folder" style="text-decoration:none"
+               href="#orders-folder-hint" title="Файлы лежат в data/exports/">📁 Где лежат файлы</a>
+          </div>
+        </div>
+        <p class="muted small">Готовые наряд-заказы в формате Word (.docx).
+          Скачайте файл → он сохранится в «Загрузки» с именем наряд-заказа.
+          Исходники хранятся локально в папке <code>data/exports</code>.</p>
+        <div class="table-wrap tall">
+          <table class="table hoverable" id="orders-table">
+            <thead><tr><th>Документ</th><th>Создан</th>
+              <th class="ta-r">Размер</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <div id="orders-empty" class="empty-state">
+            Пока нет ни одного наряд-заказа — сделайте расчёт и нажмите «📄 Заказ-наряд Word»
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><h2>Обновление цен</h2></div>
+        <p class="muted small">Кнопка «Обновить» скачивает актуальный прайс с Яндекс Диска
+          и заменяет локальную базу. Прежняя база автоматически уходит в архив
+          (хранятся 10 последних копий). До замены файл полностью проверяется.</p>
+        <label class="field" style="max-width:520px">
+          <span>Публичная ссылка Яндекс Диска</span>
+          <input id="yd-url-orders" type="text">
+        </label>
+        <div style="display:flex; gap:10px; margin-top:12px">
+          <button class="btn btn-primary" id="btn-orders-refresh-price">🔄 Обновить</button>
+        </div>
+        <h3>Архив прайсов (последние 10)</h3>
+        <div id="archive-list" class="archive-list"></div>
+      </div>
+    </section>
+
+    <!-- ============ ИСТОРИЯ ============ -->
+    <section class="view" id="view-history">
+      <div class="card">
+        <div class="card-title"><h2>История расчётов</h2></div>
+        <div class="table-wrap tall">
+          <table class="table hoverable" id="history-table">
+            <thead><tr><th>№ расчёта</th><th>Дата</th><th>Режим</th>
+              <th>Склад</th><th>Пункт</th><th class="ta-r">Сумма, ₽</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <div id="history-empty" class="empty-state">Расчётов пока нет</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ НАСТРОЙКИ ============ -->
+    <section class="view" id="view-settings">
+      <div class="card">
+        <div class="card-title"><h2>Источник данных</h2></div>
+        <p class="muted">Все данные хранятся локально в папке <code>data/</code> рядом с приложением.
+          Ничего не отправляется в интернет, кроме явной загрузки прайса по ссылке.</p>
+        <div style="margin-top:10px">
+          <button class="btn btn-ghost" id="btn-shutdown">⏻ Завершить приложение</button>
+          <span class="muted small" style="margin-left:8px">останавливает фоновый сервер этого приложения</span>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <span>Публичная ссылка Яндекс Диска на прайс</span>
+            <input id="yd-url" type="text" placeholder="https://disk.yandex.ru/d/…">
+          </div>
+          <div class="field">
+            <span>Актуальный прайс с Яндекс Диска (заменяет базу, прежняя — в архив)</span>
+            <button class="btn btn-primary" id="btn-yd-download">🔄 Обновить</button>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <span>Перезагрузить прайс из локального файла</span>
+            <button class="btn" id="btn-reload">🔄 Перезагрузить данные</button>
+          </div>
+          <div class="muted small" id="meta-data">
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><h2>Тарифы и правила (из прайса)</h2></div>
+        <div id="tariff-view" class="tariff-grid"></div>
+        <div class="muted small">Значения редактируются в файле <code>data/прайс.xlsx</code> → листы «Тарифы» и «Правила».</div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ===================== MODAL: добавление товара ===================== -->
+<div class="modal hidden" id="modal-product">
+  <div class="modal-card">
+    <div class="card-title"><h2>Новый товар</h2>
+      <button class="icon-btn" data-close>✕</button></div>
+    <div class="grid-2">
+      <label class="field span2"><span>Наименование *</span>
+        <input id="np-name" type="text"></label>
+      <label class="field"><span>Категория</span>
+        <input id="np-category" type="text" placeholder="Прочие"></label>
+      <label class="field"><span>Единица измерения</span>
+        <input id="np-unit" type="text" placeholder="шт"></label>
+      <label class="field"><span>Цена, ₽ *</span>
+        <input id="np-price" type="number" min="0" step="0.01"></label>
+      <label class="field"><span>Масса единицы, кг *</span>
+        <input id="np-mass" type="number" min="0" step="0.001"></label>
+      <label class="field"><span>Объём единицы, м³</span>
+        <input id="np-volume" type="number" min="0" step="0.0001" placeholder="если известен"></label>
+      <label class="field"><span>Тип груза</span>
+        <select id="np-cargo"><option>Штучный</option><option>Навалочный</option><option>Миксерный</option></select></label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" data-close>Отмена</button>
+      <button class="btn btn-primary" id="np-save">Сохранить в прайс</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: детали расчёта ===================== -->
+<div class="modal hidden" id="modal-calc">
+  <div class="modal-card wide">
+    <div class="card-title"><h2 id="mc-title">Расчёт</h2>
+      <button class="icon-btn" data-close>✕</button></div>
+    <div id="mc-body"></div>
+  </div>
+</div>
+
+<div id="toasts" class="toasts"></div>
+<script src="js/app.js"></script>
+</body>
+</html>

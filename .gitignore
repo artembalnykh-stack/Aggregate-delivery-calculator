@@ -1,0 +1,37 @@
+# Python virtual environment
+.venv/
+
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+
+# PyInstaller build artifacts (muck only, not scripts/icons)
+build/КалькуляторДоставки/
+dist/
+
+# SQLite history & local settings
+data/history.sqlite
+data/history.sqlite-shm
+data/history.sqlite-wal
+data/settings.json
+data/settings.local.json
+
+# Generated exports & archives (local data)
+data/exports/
+data/archive/
+
+# Logs
+data/app.log
+
+# IDE / OS
+.DS_Store
+.pytest_cache/
+
+# PyInstaller spec (regenerated on build)
+*.spec
+
+# Internal working docs — not for publication
+Задача.rtf
+СТРУКТУРА_ПРОЕКТА.md
+Запустить.command
